@@ -354,3 +354,7 @@ Creating docker_repo_kibana_1        ... done
 Creating docker_repo_logstash_1      ... done
 Creating docker_repo_filebeat_1      ... done
 ```
+
+
+参考网站：
+    https://github.com/JasonkayZK/docker-repo/tree/elk-stack-v7.1-single#docker-compose%E5%8F%98%E9%87%8F%E9%85%8D%E7%BD%AE
