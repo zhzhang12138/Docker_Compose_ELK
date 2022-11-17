@@ -1,0 +1,56 @@
+version: '3.4'
+
+services:
+    elasticsearch:
+        image: "docker.elastic.co/elasticsearch/elasticsearch:${ES_VERSION}"
+        environment:
+            - discovery.type=single-node
+        volumes:
+            - /etc/localtime:/etc/localtime
+            - /elk/elasticsearch/data:/usr/share/elasticsearch/data
+            - /elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+            - /elk/elasticsearch/plugins:/usr/share/elasticsearch/plugins
+        ports:
+            - "9200:9200"
+            - "9300:9300"
+    
+    logstash:
+        depends_on:
+            - elasticsearch
+        image: "docker.elastic.co/logstash/logstash:${ES_VERSION}"
+        volumes:
+            - /elk/logstash/config/conf.d/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+        ports:
+            - "5044:5044"
+        links:
+            - elasticsearch
+
+    kibana:
+        depends_on:
+            - elasticsearch
+        image: "docker.elastic.co/kibana/kibana:${ES_VERSION}"
+        volumes:
+            - /etc/localtime:/etc/localtime
+            # kibana.yml配置文件放在宿主机目录下,方便后续汉化
+            - /elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml
+        ports:
+            - "5601:5601"
+        links:
+            - elasticsearch
+
+    filebeat:
+        depends_on:
+            - elasticsearch
+            - logstash
+        image: "docker.elastic.co/beats/filebeat:${ES_VERSION}"
+        user: root # 必须为root
+        environment:
+            - strict.perms=false
+        volumes:
+            - /elk/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+            # 映射到容器中[作为数据源]
+            - /elk/filebeat/logs:/usr/share/filebeat/logs:rw
+            - /elk/filebeat/data:/usr/share/filebeat/data:rw
+        # 将指定容器连接到当前连接，可以设置别名，避免ip方式导致的容器重启动态改变的无法连接情况
+        links:
+            - logstash
